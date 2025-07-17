@@ -100,9 +100,8 @@ Create an environment:
 conda create -n orthocaller python=3.10 ete3 pandas
 conda activate orthocaller
 ```
-#######################################################################################################################################
-############################################ Evolutionary Reasoning ######################################################################
-#########################################################################################################################################
+
+## Evolutionary Reasoning
 This pipeline aims to improve orthogroup classification by integrating information from both gene and species trees in a biologically informed way. Gene trees alone can sometimes be misleading—topological artifacts, missing data, or uneven evolutionary rates can obscure which genes are truly orthologous. By examining branch lengths and tree structure, we flag cases where one gene copy appears to evolve much faster than its sibling, which may indicate misassignment or unresolved duplication. We also recognize that not every inferred duplication event reflects true evolutionary history; some may be artifacts of limited phylogenetic resolution, so we apply conservative filters to reduce false positives. The fundamental assumption is that true orthologs will appear once per focal species. When this pattern is broken—due to missing species or extra copies—it suggests gene loss or duplication, which we classify accordingly. In doing so, this pipeline provides a more nuanced and testable framework for understanding
 
 ## Dependencies
