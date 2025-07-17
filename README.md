@@ -2,8 +2,7 @@
 **A Reconciliation-Based Pipeline for Evolutionary Orthology Assignment**  
 _Adapted from [Comparative Genomics Snakes Toolkit](https://github.com/masonaj157/Comparative_genomics_snakes)_
 
-========================================================================================================================================================================================================================================================================
-========================================================================================================================================================================================================================================================================
+---
 # 🧬 Orthocaller v3
 
 **Orthocaller v3** is a gene tree-based orthogroup classification tool for comparative genomics. It uses reconciled gene trees (e.g., from **GeneRax**) and a rooted species tree to identify conserved, duplicated, and lost orthologs across species.
@@ -21,9 +20,7 @@ This version introduces **flexible in-paralog resolution**, with three user-sele
 | `average_divergence`| Retains the copy whose branch length ratio is closest to the duplication node — a proxy for balanced divergence. |
 
 
-========================================================================================================================================================================================================================================================================
-========================================================================================================================================================================================================================================================================
-
+---
 
 ## 📖 Overview
 **Orthocaller v2.0** classifies orthogroups using reconciled gene trees (e.g., from **GeneRax**), a rooted species tree, and a gene-to-species map.  
