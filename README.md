@@ -137,7 +137,7 @@ The following two accessory scripts assist with filtering and extracting gene-sp
 
 
 ## Preparing input from Generax 
-# Orthocaller – GeneRax Accessory Pipeline
+# Orthocaller – Accessory Pipeline
 
 This accessory pipeline uses **GeneRax output** to prepare all the necessary inputs for **Orthocaller**.  
 It automates the generation of species maps, focal species files, and pruned species trees derived from GeneRax reconciliations.  
