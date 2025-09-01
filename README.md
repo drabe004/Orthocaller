@@ -135,6 +135,54 @@ drabe004@umn.edu
 
 The following two accessory scripts assist with filtering and extracting gene-specific sequence alignments based on species representation in orthogroups. These are especially useful for downstream analysis when focusing on genes with broad taxonomic sampling.
 
+
+## Preparing input from Generax 
+# Orthocaller – GeneRax Accessory Pipeline
+
+This accessory pipeline uses **GeneRax output** to prepare all the necessary inputs for **Orthocaller**.  
+It automates the generation of species maps, focal species files, and pruned species trees derived from GeneRax reconciliations.  
+
+---
+
+## Workflow Overview
+
+1. **Generate species maps** – Parse GeneRax reconciled trees to create mapping files linking sequence IDs to species names.  
+2. **Generate focal species files** – Use species maps to define per-orthogroup focal species sets.  
+3. **Generate pruned species trees** – Build reduced species trees from the focal species lists, suitable for Orthocaller.  
+
+The outputs of this pipeline are used directly by Orthocaller.
+
+---
+
+## Step 1: Generate Species Maps
+
+Run the loop script to write species maps from GeneRax reconciliations:
+
+1) Make map files 
+generate_map_loopz2.sh
+
+Step 2: Generate Focal Species Files from map files 
+
+generate_focal_species_from_maps.py
+generate_focal_species_from_maps.sh
+
+
+Step 3: Generate Pruned Species Trees
+Prune the master species tree to reflect only focal species, producing per-orthogroup trees for Orthocaller:
+
+writeTrees.py
+WriteTrees.sh
+
+Notes
+These scripts assume completed GeneRax runs with reconciled gene trees.
+
+Outputs include:
+
+*.map files (species ↔ sequence mappings)
+focal species files (plain text)
+pruned species trees (Newick format)
+
+## Processing output from orthocaller
 ### 1. `FilterSummaryFiles.py`
 
 **Purpose**  
