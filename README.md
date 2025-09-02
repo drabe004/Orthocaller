@@ -3,13 +3,13 @@
 _Adapted from [Comparative Genomics Snakes Toolkit](https://github.com/masonaj157/Comparative_genomics_snakes)_
 
 ---
-# 🧬 Orthocaller v3
+# 🧬 Orthocaller v3.0
 
 **Orthocaller v3** is a gene tree-based orthogroup classification tool for comparative genomics. It uses reconciled gene trees (e.g., from **GeneRax**) and a rooted species tree to identify conserved, duplicated, and lost orthologs across species.
 
 ---
 
-## 🚨 What's New in v3?
+## 🚨 What's New in v3.0?
 
 This version introduces **flexible in-paralog resolution**, with three user-selectable strategies for deciding which in-paralog copy to retain:
 
