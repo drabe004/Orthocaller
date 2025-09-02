@@ -20,6 +20,26 @@ This version introduces **flexible in-paralog resolution**, with three user-sele
 | `average_divergence`| Retains the copy whose branch length ratio is closest to the duplication node — a proxy for balanced divergence. |
 
 
+
+---
+# 🧬 Orthocaller v3.1
+---
+
+## 🚨 What's New in v3.1?
+1) Improved branch length handling
+The branch length options remain functional, but very short branches occasionally caused problems when re-rooting. Version 3.1 introduces a safeguard: if the ancestral node is already the root, the algorithm now skips re-rooting and grafts the subtree directly. This prevents errors associated with near-zero branch lengths.
+
+2) Updated classification logic for in-paralog pruning
+After pruning in-paralogs at SD nodes, the grafted node is now reclassified from a duplication (“D”) to a speciation (“S”) event. This change reflects the biological reality that once redundant in-paralogs are removed, the remaining structure represents speciation. Retaining the “D” label in this context was misleading and inconsistent with the model.
+
+3) Safeguard against reclassification of artificial short branches
+Re-grafted subtrees introduced by in-paralog pruning are often extremely short by design. These branches are now excluded from further branch-length–based reclassification to avoid artifacts, ensuring that only biologically meaningful nodes are considered in downstream analyses.
+
+Together, these updates provide more consistent handling of tree re-rooting and classification, especially in cases involving short branches and in-paralog pruning.
+
+Why this matters
+These updates ensure that tree handling and classification better reflect the underlying biology. By treating pruned in-paralogs as true speciation events and preventing artifacts from very short branches, Version 3.1 improves the accuracy and interpretability of downstream analyses such as selection tests. In short: results are now both more robust and more biologically meaningful.
+
 ---
 
 ## 📖 Overview
