@@ -206,6 +206,12 @@ Outputs include:
 focal species files (plain text)
 pruned species trees (Newick format)
 
+
+## Running Orthocaller arrays on HPC clusters
+
+### 1. 'Run_Master_Arrays.sh'
+--allows a user to run thousands of orthogroups at once, iterative waiting to acomodate shared HPC cluster array job limits (ours is 3k). 
+
 ## Processing output from orthocaller
 ### 1. `FilterSummaryFiles.py`
 
