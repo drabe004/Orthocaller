@@ -71,8 +71,10 @@ Orthology inference based solely on clustering or sequence similarity (e.g., Ort
 | `-rd` | Directory with GeneRax reconciled output |
 | `-md` | Folder with gene-to-species `.map` files (e.g., Species:Seq1;Seq2).|
 | `-od` | Output directory |
-| `--cavefish_list` | Text file with cavefish species (1 per line) |
-| `--background_list` | Text file with background species |
+| `--cavefish_list` | Text file with cavefish species (aka foreground species of interest) (1 per line) |
+| `--background_list` | Text file with background species (aka background species of interest)  |
+| '--focal_species_file' | a text file listing all the species in the orthogroup |
+| '--inparalog_strategy' | How do you want the script to choose between paralogs at the tree tips? Choices--- 1) shortest (chooses the paralog with the shortest branch from the D node) 2) average_distance (chooses the paralog with a branch length that is the clostest to the branch length of the parent branch leading to the D node) 3) farthest (chooses the paralog with the longest branch length from the parent D node) |
 
 
 ## 📤 Output Files per Orthogroup
@@ -91,7 +93,7 @@ Orthology inference based solely on clustering or sequence similarity (e.g., Ort
 
 ### Running the Script
 You can run the script manually:
-python ortho_caller_Version2_Official.py \
+python orthocaller-v3.1.py \
     -og 1_generax \
     -st SpeciesTree_rooted.tre \
     -rd GeneRax_Output_Dir \
@@ -99,9 +101,11 @@ python ortho_caller_Version2_Official.py \
     -od 5.1_OG_classifications/ \
     --cavefish_list Cavefish_List.txt \
     --background_list BackgroundFish_List.txt
+    --focal_species_file focalfile.txt \
+    --inparalog_strategy shortest 
 
 Or at scale using the included SLURM script (ortho_caller_Version2_Official.sh), which parallelizes across 3000 orthogroups using SLURM job arrays:
-sbatch ortho_caller_Version2_Official.sh
+sbatch orthocaller-v3.1.sh 
 
 This SLURM script:
 Submits 3000 jobs (--array=1-3000)
