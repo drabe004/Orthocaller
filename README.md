@@ -51,7 +51,7 @@ Long branch thresholds and Short branch thresholds are passable now as arguments
 ---
 
 ## 📖 Overview
-**Orthocaller v2.0** classifies orthogroups using reconciled gene trees (e.g., from **GeneRax**), a rooted species tree, and a gene-to-species map.  
+**Orthocaller v2.0 +** classifies orthogroups using reconciled gene trees (e.g., from **GeneRax**), a rooted species tree, and a gene-to-species map.  
 It identifies evolutionary events like:
 - ✅ Conserved orthologs  
 - 🔁 Species-specific duplications  
