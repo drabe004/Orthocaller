@@ -1,0 +1,12 @@
+name: orthocaller
+channels:
+  - defaults
+dependencies:
+  - biopython
+  - scipy=1.9
+  - python=3.10
+  - ete3
+  - numpy=1.23
+  - pandas
+  - ncbi-datasets-cli
+prefix: /users/5/drabe004/.conda/envs/orthocaller
