@@ -126,16 +126,59 @@ SHORT_BRANCH_THRESHOLD = args.short_branch_threshold
 ########################################
 
 def find_species(focal_file):
+    """
+    Read a newline-delimited focal species file.
+
+    Parameters
+    ----------
+    focal_file : str
+        Path to a text file containing one species name per line.
+
+    Returns
+    -------
+    list
+        Non-empty species names stripped of leading and trailing whitespace.
+    """
     with open(focal_file, 'r') as f:
         return [line.strip() for line in f if line.strip()]
 
 
 
 def parse_sp_name(node_name):
+    """
+    Extract the species identifier from a renamed sequence header.
+
+    Parameters
+    ----------
+    node_name : str
+        Sequence name formatted with the species identifier before the first underscore.
+
+    Returns
+    -------
+    str
+        Species identifier parsed from the sequence name.
+    """
     return node_name.split("_")[0]
 
 
 def read_and_reconcile_tree(orthogroup, reconciled_dir, map):
+    """
+    Load the GeneRax-reconciled gene tree and reconcile it against the species tree.
+
+    Parameters
+    ----------
+    orthogroup : str
+        Orthogroup identifier being processed.
+    reconciled_dir : str
+        Directory containing GeneRax reconciliation output.
+    map : pandas.DataFrame
+        Mapping table with original sequence names and renamed species-aware identifiers.
+
+    Returns
+    -------
+    ete3.PhyloTree
+        Reconciled gene tree with renamed leaves and species parsing enabled.
+    """
     tree_string = glob.glob(reconciled_dir + "/" + orthogroup + "/reconciliations/*.newick")[0]
     ##Danielle had to change this because Phylotree cannot handle wildcards like *.newick
     #tree_string = reconciled_dir + "/" + orthogroup + "/" + "reconciliations/*.newick"
@@ -151,6 +194,19 @@ def read_and_reconcile_tree(orthogroup, reconciled_dir, map):
     return(tree)
 
 def reclassify_postprune_duplications(tree):
+    """
+    Reclassify duplication nodes that no longer contain duplicated species.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Reconciled gene tree containing evoltype annotations.
+
+    Returns
+    -------
+    None
+        The input tree is modified in place.
+    """
     for node in tree.traverse():
         if hasattr(node, "evoltype") and node.evoltype == "D":
             species = [x.species for x in node.get_leaves()]
@@ -161,6 +217,27 @@ def reclassify_postprune_duplications(tree):
 
 
 def modify_classifications(tree, st, focal_species):
+    """
+    Run the Orthocaller classification workflow on a reconciled gene tree.
+
+    This applies post-pruning duplication reclassification, in-paralog labeling,
+    topology correction, putative false-orthology detection, paralog splitting,
+    and non-focal species filtering.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Reconciled gene tree.
+    st : ete3.Tree
+        Species tree used for reconciliation and topology correction.
+    focal_species : list
+        Species retained for downstream orthogroup classification.
+
+    Returns
+    -------
+    tuple
+        Final paralog subtree list and an NHX tree retaining duplication annotations.
+    """
     reclassify_postprune_duplications(tree)
     tree = modify_in_paralog(tree)
     identify_and_resolve_topology_problems(tree,st)
@@ -171,6 +248,19 @@ def modify_classifications(tree, st, focal_species):
 
 
 def identify_putative_false_orthology(tree):
+    """
+    Identify putative false orthology caused by long branch patterns.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Reconciled gene tree containing speciation and duplication annotations.
+
+    Returns
+    -------
+    None
+        Nodes may be reclassified in place when long-branch criteria are met.
+    """
     for node in tree.traverse():
         if (hasattr(node,'evoltype') and node.evoltype == 'D'):
             for child in node.get_children():
@@ -190,6 +280,21 @@ def identify_putative_false_orthology(tree):
 
 
 def long_br(descendent,ref):
+    """
+    Test whether a descendant branch is long relative to a reference branch.
+
+    Parameters
+    ----------
+    descendent : ete3.TreeNode
+        Descendant node whose branch length is evaluated.
+    ref : float
+        Reference branch length used as the denominator for the ratio.
+
+    Returns
+    -------
+    bool
+        True if the descendant/reference ratio exceeds LONG_BRANCH_THRESHOLD.
+    """
     if ref == 0.0:
         ref = 0.000001
     test = descendent.dist
@@ -205,6 +310,21 @@ def long_br(descendent,ref):
 
 
 def identify_and_resolve_topology_problems(tree,st):
+    """
+    Detect and repair topology issues near duplication/speciation boundaries.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Reconciled gene tree to inspect and modify.
+    st : ete3.Tree
+        Species tree used to re-root and re-reconcile problematic subtrees.
+
+    Returns
+    -------
+    None
+        Problematic nodes are modified in place when criteria are met.
+    """
     for node in tree.traverse():
         if hasattr(node, 'evoltype') and node.evoltype == 'D' :
             for child in node.get_children():
@@ -217,6 +337,21 @@ def identify_and_resolve_topology_problems(tree,st):
 
 
 def short_br(node,child):
+    """
+    Test whether a child branch is short relative to its parent duplication branch.
+
+    Parameters
+    ----------
+    node : ete3.TreeNode
+        Parent node used as the reference branch.
+    child : ete3.TreeNode
+        Child node whose distance from the parent is evaluated.
+
+    Returns
+    -------
+    bool
+        True if the child/reference ratio is below SHORT_BRANCH_THRESHOLD.
+    """
     ref = node.dist
     if ref == 0.0:
         ref = 0.00000000001
@@ -236,6 +371,22 @@ def short_br(node,child):
 ## Tests number of species representatives below a given node accounting for in paralogs.
 ## Passes (True) if only 1 per species. Fails (False) if more than 1 after account for in-paralogs.
 def species_rep_test(node):
+    """
+    Test whether a node contains at most one representative per species.
+
+    Species-specific duplication events are accounted for before evaluating
+    whether any species appears more than once below the node.
+
+    Parameters
+    ----------
+    node : ete3.TreeNode
+        Tree node whose descendant species representation is evaluated.
+
+    Returns
+    -------
+    bool
+        True if species representation is compatible with one copy per species.
+    """
     species = [x.species for x in node.get_leaves()]
     sd_species = [x.species for x in node.traverse() if hasattr(node,"evoltype") and node.evoltype == "SD"]
     if len(sd_species) != 0:
@@ -248,6 +399,23 @@ def species_rep_test(node):
 
 
 def fix_node(tree, bad_node, st):
+    """
+    Re-root and re-reconcile a problematic subtree against a pruned species tree.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Full gene tree containing the problematic node.
+    bad_node : ete3.TreeNode
+        Node to replace after topology correction.
+    st : ete3.Tree
+        Species tree used to select an outgroup and reconcile the corrected subtree.
+
+    Returns
+    -------
+    None
+        The corrected subtree is grafted back into the original tree in place.
+    """
     node = copy.deepcopy(bad_node)
     spare_st = copy.deepcopy(st)
     represented_species = [x for x in spare_st.get_leaf_names() if x in node.get_species()]
@@ -282,6 +450,21 @@ def fix_node(tree, bad_node, st):
     
 
 def search_for_species(tree, species):
+    """
+    Find all nodes in a tree matching one or more species names.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Tree to search.
+    species : list
+        Species names to locate.
+
+    Returns
+    -------
+    list
+        Nodes whose species attribute matches one of the requested species.
+    """
     node_list = []
     for entry in species:
         for node in tree.traverse():
@@ -291,6 +474,19 @@ def search_for_species(tree, species):
 
 
 def find_reference_outgroup(st):
+    """
+    Select a reference outgroup from a species tree.
+
+    Parameters
+    ----------
+    st : ete3.Tree
+        Species tree pruned to the species represented in a subtree.
+
+    Returns
+    -------
+    list
+        Species name or species names used as the reference outgroup.
+    """
     outgroup = list(st.get_leaf_names())
     for child in st.get_children():
         if child.is_leaf() == True:
@@ -302,6 +498,19 @@ def find_reference_outgroup(st):
 
 
 def modify_in_paralog(tree):
+    """
+    Label species-specific duplication nodes as SD events.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Reconciled gene tree containing duplication annotations.
+
+    Returns
+    -------
+    ete3.Tree
+        Tree with single-species duplication nodes relabeled as SD.
+    """
     for node in tree.traverse():
         if hasattr(node, "evoltype") and node.evoltype == "D":
             if len(list(node.get_species())) == 1:
@@ -313,6 +522,21 @@ def modify_in_paralog(tree):
 
 
 def fix_in_paralogs_define_groups(tree,focal_species):
+    """
+    Split duplication-defined subtrees and resolve in-paralog groups.
+
+    Parameters
+    ----------
+    tree : ete3.Tree
+        Reconciled gene tree with SD events labeled.
+    focal_species : list
+        Species used to classify conservation, loss, or duplication.
+
+    Returns
+    -------
+    tuple
+        Final paralog subtree list and a copy of the NHX tree with SD nodes restored to D.
+    """
     #print(tree)
     nhx_tree = copy.deepcopy(tree)
     for node in nhx_tree.traverse():
@@ -334,6 +558,19 @@ def fix_in_paralogs_define_groups(tree,focal_species):
 
 
 def count_SD_events(subtree):
+    """
+    Count species-specific duplication events within a subtree.
+
+    Parameters
+    ----------
+    subtree : ete3.Tree
+        Subtree to scan for nodes labeled with evoltype == "SD".
+
+    Returns
+    -------
+    int
+        Number of SD events detected.
+    """
     counter = 0
     for node in subtree.traverse():
         if hasattr(node, "evoltype") and node.evoltype == "SD":
@@ -343,6 +580,23 @@ def count_SD_events(subtree):
 
 #  PATCHED SD_graft with strategy block inserted
 def SD_graft(subtree):
+    """
+    Resolve species-specific duplication events by retaining one in-paralog representative.
+
+    For each SD node, this function selects one retained copy according to
+    args.inparalog_strategy and separates remaining copies into duplication-derived
+    paralog groups.
+
+    Parameters
+    ----------
+    subtree : ete3.Tree
+        Subtree containing one or more SD events.
+
+    Returns
+    -------
+    list
+        Resolved ortholog and paralog subtrees after SD processing.
+    """
     node_list = []
     if len(subtree.get_species()) == 1:
         for node in subtree.traverse():
@@ -422,6 +676,21 @@ def SD_graft(subtree):
 
 
 def add_evolevent_feature(node,focal_species):
+    """
+    Assign conserved, loss, or duplication classification to a subtree.
+
+    Parameters
+    ----------
+    node : ete3.TreeNode
+        Subtree root to classify.
+    focal_species : list
+        Species expected in the orthogroup.
+
+    Returns
+    -------
+    None
+        Classification features are added directly to the node.
+    """
     #allspecies = list(tree.get_species())
     nspecies = [x.species for x in node.get_leaves()]
     if all([nspecies.count(x) == 1 for x in focal_species]):
@@ -441,6 +710,21 @@ def add_evolevent_feature(node,focal_species):
 
 
 def filter_nonfocal_species(subtree_list, focal_species):
+    """
+    Remove or prune subtrees that lack complete focal-species representation.
+
+    Parameters
+    ----------
+    subtree_list : list
+        Candidate ortholog/paralog subtrees.
+    focal_species : list
+        Species to retain for downstream analysis.
+
+    Returns
+    -------
+    list
+        Filtered subtree list containing focal species only.
+    """
     for subtree in subtree_list:
         species = list(subtree.get_species())
         if not any(x in species for x in focal_species):
@@ -455,6 +739,19 @@ def filter_nonfocal_species(subtree_list, focal_species):
                     
 
 def build_orthologs_output(paralogs_list):
+    """
+    Build the orthogroup membership output table.
+
+    Parameters
+    ----------
+    paralogs_list : list
+        Final ortholog/paralog subtrees.
+
+    Returns
+    -------
+    list
+        Rows containing generated gene names and space-delimited member sequence names.
+    """
     orthologs_out = []
     counter = 0
     for paralog in paralogs_list:
@@ -470,6 +767,19 @@ def build_orthologs_output(paralogs_list):
 
 
 def build_ortholog_keys(paralogs_list):
+    """
+    Build a sequence-to-orthogroup key table.
+
+    Parameters
+    ----------
+    paralogs_list : list
+        Final ortholog/paralog subtrees.
+
+    Returns
+    -------
+    list
+        Rows mapping each sequence name to its generated Orthocaller gene name.
+    """
     ortholog_keys = []
     counter = 0
     for paralog in paralogs_list:
@@ -482,6 +792,21 @@ def build_ortholog_keys(paralogs_list):
 
 
 def build_classes_table(paralogs_list, focal_species):
+    """
+    Build pairwise focal-species classification table for each paralog group.
+
+    Parameters
+    ----------
+    paralogs_list : list
+        Final classified ortholog/paralog subtrees.
+    focal_species : list
+        Species used to construct pairwise comparison columns.
+
+    Returns
+    -------
+    list
+        Classification table with conserved, loss, duplication, or NA entries.
+    """
     classes = []
     counter = 0
     species_comparisons = [comb for comb in combinations(focal_species, 2)]
@@ -517,6 +842,21 @@ def build_classes_table(paralogs_list, focal_species):
 
 
 def fix_nhx_names(nhx_tree,map):
+    """
+    Convert NHX tree leaf names back to original sequence identifiers.
+
+    Parameters
+    ----------
+    nhx_tree : ete3.Tree
+        Annotated NHX tree with renamed leaves.
+    map : pandas.DataFrame
+        Mapping table linking renamed leaves to original sequence identifiers.
+
+    Returns
+    -------
+    ete3.Tree
+        NHX tree with original sequence names restored.
+    """
     for leaf in nhx_tree.get_leaves():
         new_name = map[map["New_name"] == leaf.name]["Sequence"].iloc[0]
         leaf.name = new_name
@@ -524,6 +864,21 @@ def fix_nhx_names(nhx_tree,map):
 
 
 def fix_paralog_names(paralog_list, map):
+    """
+    Convert paralog subtree leaf names back to original sequence identifiers.
+
+    Parameters
+    ----------
+    paralog_list : list
+        Final paralog subtrees with renamed leaves.
+    map : pandas.DataFrame
+        Mapping table linking renamed leaves to original sequence identifiers.
+
+    Returns
+    -------
+    list
+        Paralog subtrees with original sequence names restored.
+    """
     for paralog in paralog_list:
         for leaf in paralog.get_leaves():
             new_name = map[map["New_name"] == leaf.name]["Sequence"].iloc[0]
@@ -532,6 +887,21 @@ def fix_paralog_names(paralog_list, map):
 
 
 def modify_nhx(nhx,focal_species):
+    """
+    Prune an NHX tree to focal species.
+
+    Parameters
+    ----------
+    nhx : ete3.Tree
+        Annotated tree to copy and prune.
+    focal_species : list
+        Species retained in the output tree.
+
+    Returns
+    -------
+    ete3.Tree
+        Pruned copy of the input tree.
+    """
     new_tree = copy.deepcopy(nhx)
     keep_leaves = [leaf.name for leaf in new_tree.get_leaves() if leaf.species in focal_species]
     new_tree.prune(keep_leaves)
@@ -539,6 +909,21 @@ def modify_nhx(nhx,focal_species):
 
 
 def decostar_sp_tree(species_tree,focal_species):
+    """
+    Prune the species tree for DeCoSTAR output.
+
+    Parameters
+    ----------
+    species_tree : ete3.Tree
+        Full species tree.
+    focal_species : list
+        Species to retain.
+
+    Returns
+    -------
+    ete3.Tree
+        Copy of the species tree pruned to focal species.
+    """
     keep_leaves = [leaf.name for leaf in species_tree.get_leaves() if leaf.name in focal_species]
     edited_species_tree = copy.deepcopy(species_tree)
     edited_species_tree.prune(keep_leaves)
@@ -546,6 +931,19 @@ def decostar_sp_tree(species_tree,focal_species):
 
 
 def add_anc_names(st):
+    """
+    Add ancestral species labels required for downstream NHX output.
+
+    Parameters
+    ----------
+    st : ete3.Tree
+        Species tree to annotate.
+
+    Returns
+    -------
+    ete3.Tree
+        Species tree with S features added to ancestral and terminal nodes.
+    """
     possible_species = st.get_leaf_names()
     counter = 0
     for node in st.traverse():
@@ -571,6 +969,21 @@ def add_anc_names(st):
 
 
 def make_decostar_nhx(nwk_tree, focal_st):
+    """
+    Create a DeCoSTAR-compatible NHX tree with duplication and species annotations.
+
+    Parameters
+    ----------
+    nwk_tree : ete3.Tree
+        Pruned gene tree containing evoltype annotations.
+    focal_st : ete3.Tree
+        Focal species tree annotated with ancestral species names.
+
+    Returns
+    -------
+    ete3.Tree
+        NHX tree annotated with D, S, and geneName features.
+    """
     decostar_nhx = copy.deepcopy(nwk_tree)
     for node in decostar_nhx.traverse():
         if hasattr(node, 'evoltype') and node.evoltype == "D":
@@ -597,6 +1010,32 @@ def make_decostar_nhx(nwk_tree, focal_st):
 # BEGIN PATCH: write_summary function--- writes a summary file to output with the two species lists--- can be customized or skipped
   
 def write_summary(orthogroup_name, orthologs_table, focal_species, cavefish_list, background_list, output_dir):
+    """
+    Write an orthogroup-level summary file.
+
+    The summary includes total focal species, unique species observed,
+    cavefish/background counts, and per-gene species breakdowns.
+
+    Parameters
+    ----------
+    orthogroup_name : str
+        Orthogroup identifier.
+    orthologs_table : list
+        Ortholog membership table produced by build_orthologs_output.
+    focal_species : list
+        Focal species used in the analysis.
+    cavefish_list : list
+        Species classified as cavefish.
+    background_list : list
+        Species classified as background fish.
+    output_dir : str
+        Base output directory for Orthocaller results.
+
+    Returns
+    -------
+    None
+        Writes summary.txt into the orthogroup output directory.
+    """
     summary_lines = []
     summary_lines.append(f"Orthogroup: {orthogroup_name}")
     summary_lines.append(f"Total species in input: {len(focal_species)}")
