@@ -22,7 +22,6 @@ mkdir -p logs
 # Load environment
 # ---------------------------
 # Load environment
-module load compatibility/agate-centos7
 module load conda
 source activate orthocaller
 echo "[DEBUG] SLURM_ARRAY_TASK_ID='${SLURM_ARRAY_TASK_ID}'"

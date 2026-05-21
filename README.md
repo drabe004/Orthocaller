@@ -99,6 +99,15 @@ Orthology inference based solely on clustering or sequence similarity (e.g., Ort
 | `*_classes.csv` | Classifications per gene group |
 | `summary.txt` | High-level stats & summary |
 
+
+### Using the Conda environment
+
+
+conda env create -f environment.yml
+conda activate orthocaller
+
+
+
 ### Running the Script
 You can run the script manually:
 python orthocaller-v3.1.py \
